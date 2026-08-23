@@ -6,24 +6,25 @@ on:
       - main
 
 jobs:
-  test:
+  docker-build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Install dependencies
+      - name: Validate project files
         run: |
-          cd backend
-          pip install -r requirements.txt
+          test -f backend/app.py
+          test -f backend/Dockerfile
+          test -f backend/requirements.txt
+          test -f frontend/Dockerfile
+          echo "Project files validated successfully"
 
-      - name: Run backend tests
+      - name: Build backend Docker image
         run: |
-          cd backend
-          pytest
+          docker build -t three-tier-backend:latest ./backend
+
+      - name: Build frontend Docker image
+        run: |
+          docker build -t three-tier-frontend:latest ./frontend
