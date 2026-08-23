@@ -1,4 +1,4 @@
-name: Three Tier CI/CD
+name: Kubernetes Connection Test
 
 on:
   push:
@@ -6,45 +6,15 @@ on:
       - main
 
 jobs:
-  docker-build:
-    runs-on: ubuntu-latest
+  kubernetes-test:
+    runs-on: self-hosted
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Validate project files
+      - name: Check Kubernetes connection
         run: |
-          test -f backend/app.py
-          test -f backend/Dockerfile
-          test -f backend/requirements.txt
-          test -f frontend/Dockerfile
-          echo "Project files validated successfully"
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build backend Docker image
-        run: |
-          docker build \
-            -t ${{ secrets.DOCKERHUB_USERNAME }}/three-tier-backend:${{ github.sha }} \
-            ./backend
-
-      - name: Push backend Docker image
-        run: |
-          docker push \
-            ${{ secrets.DOCKERHUB_USERNAME }}/three-tier-backend:${{ github.sha }}
-
-      - name: Build frontend Docker image
-        run: |
-          docker build \
-            -t ${{ secrets.DOCKERHUB_USERNAME }}/three-tier-frontend:${{ github.sha }} \
-            ./frontend
-
-      - name: Push frontend Docker image
-        run: |
-          docker push \
-            ${{ secrets.DOCKERHUB_USERNAME }}/three-tier-frontend:${{ github.sha }}
+          kubectl config current-context
+          kubectl get nodes
+          kubectl get pods -n three-tier
