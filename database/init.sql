@@ -1,0 +1,14 @@
+CREATE DATABASE IF NOT EXISTS appdb;
+
+USE appdb;
+
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE
+);
+
+INSERT INTO users (name, email)
+VALUES
+    ('Gokul', 'gokul@example.com'),
+    ('DevOps User', 'devops@example.com');

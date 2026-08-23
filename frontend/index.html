@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Three Tier Kubernetes App</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        .status {
+            margin-bottom: 30px;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Three-Tier Kubernetes Application</h1>
+
+    <div class="status">
+        <strong>Backend Status:</strong>
+        <span id="status">Checking...</span>
+    </div>
+
+    <h2>Users</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+
+        <tbody id="users">
+        </tbody>
+    </table>
+
+    <script>
+        async function checkHealth() {
+            try {
+                const response = await fetch("/api/health");
+
+                if (!response.ok) {
+                    throw new Error("Backend unavailable");
+                }
+
+                const data = await response.json();
+
+                document.getElementById("status").textContent =
+                    data.status;
+
+            } catch (error) {
+                document.getElementById("status").textContent =
+                    "unhealthy";
+            }
+        }
+
+
+        async function loadUsers() {
+            try {
+                const response = await fetch("/api/users");
+
+                if (!response.ok) {
+                    throw new Error("Unable to fetch users");
+                }
+
+                const users = await response.json();
+
+                const tableBody =
+                    document.getElementById("users");
+
+                tableBody.innerHTML = "";
+
+                users.forEach(user => {
+
+                    const row = document.createElement("tr");
+
+                    row.innerHTML = `
+                        <td>${user.id}</td>
+                        <td>${user.name}</td>
+                        <td>${user.email}</td>
+                    `;
+
+                    tableBody.appendChild(row);
+                });
+
+            } catch (error) {
+
+                document.getElementById("users").innerHTML =
+                    `<tr>
+                        <td colspan="3">
+                            Failed to load users
+                        </td>
+                    </tr>`;
+            }
+        }
+
+
+        checkHealth();
+        loadUsers();
+    </script>
+
+</body>
+</html>
