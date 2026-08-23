@@ -1,4 +1,4 @@
-name: Kubernetes Connection Test
+name: Three Tier CI/CD
 
 on:
   push:
@@ -6,15 +6,79 @@ on:
       - main
 
 jobs:
-  kubernetes-test:
+  build-and-deploy:
     runs-on: self-hosted
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Validate project files
+        run: |
+          test -f backend/app.py
+          test -f backend/Dockerfile
+          test -f backend/requirements.txt
+          test -f frontend/Dockerfile
+          echo "Project files validated successfully"
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build backend Docker image
+        run: |
+          docker build \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/three-tier-backend:${{ github.sha }} \
+            ./backend
+
+      - name: Push backend Docker image
+        run: |
+          docker push \
+            ${{ secrets.DOCKERHUB_USERNAME }}/three-tier-backend:${{ github.sha }}
+
+      - name: Build frontend Docker image
+        run: |
+          docker build \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/three-tier-frontend:${{ github.sha }} \
+            ./frontend
+
+      - name: Push frontend Docker image
+        run: |
+          docker push \
+            ${{ secrets.DOCKERHUB_USERNAME }}/three-tier-frontend:${{ github.sha }}
+
       - name: Check Kubernetes connection
         run: |
           kubectl config current-context
           kubectl get nodes
+
+      - name: Update backend deployment
+        run: |
+          kubectl set image deployment/backend \
+            backend=${{ secrets.DOCKERHUB_USERNAME }}/three-tier-backend:${{ github.sha }} \
+            -n three-tier
+
+      - name: Update frontend deployment
+        run: |
+          kubectl set image deployment/frontend \
+            frontend=${{ secrets.DOCKERHUB_USERNAME }}/three-tier-frontend:${{ github.sha }} \
+            -n three-tier
+
+      - name: Wait for backend rollout
+        run: |
+          kubectl rollout status deployment/backend \
+            -n three-tier \
+            --timeout=120s
+
+      - name: Wait for frontend rollout
+        run: |
+          kubectl rollout status deployment/frontend \
+            -n three-tier \
+            --timeout=120s
+
+      - name: Verify application
+        run: |
           kubectl get pods -n three-tier
+          kubectl get services -n three-tier
