@@ -99,3 +99,13 @@ Write-Host "========================================"
 
 Write-Host "`nRun the following command to open the application:"
 Write-Host "minikube service frontend-service -n three-tier"
+
+Write-Host "`n========================================"
+Write-Host " Application URL"
+Write-Host "========================================"
+
+minikube service frontend-service -n three-tier --url
+
+Write-Host "`n========================================"
+Write-Host " Deployment Complete!"
+Write-Host "========================================"
